@@ -35,7 +35,8 @@
               # rust toolchain
               # use rust-analyzer-nightly for better type inference
               rust-analyzer
-              (rust-bin.stable.latest.default)
+              cargo-expand
+              (rust-bin.nightly.latest.default)
             ];
 
             LD_LIBRARY_PATH = lib.makeLibraryPath buildInputs;
