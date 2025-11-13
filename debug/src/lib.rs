@@ -7,11 +7,12 @@ mod derive_trait;
 
 #[proc_macro_derive(CustomDebug, attributes(debug))]
 pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    eprintln!("INPUT: {}", input);
     let input = syn::parse_macro_input!(input as CustomDebugInput);
     let debug_impl = input.debug_impl();
     let stream = quote! {
         #debug_impl
     };
-    // eprintln!("OUT: {stream}");
+    eprintln!("OUTPUT: {stream}");
     stream.into()
 }
