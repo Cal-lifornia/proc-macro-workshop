@@ -3,4 +3,5 @@ default:
 
 [no-cd]
 backtrace-test:
-    RUST_BACKTRACE=1 RUSTFLAGS="-Z macro-backtrace" cargo test
+    RUSTFLAGS="-Zmacro-backtrace" cargo test
+
