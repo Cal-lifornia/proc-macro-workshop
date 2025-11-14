@@ -1,7 +1,5 @@
-error: expected enum or match expression
-  --> tests/02-not-enum.rs:31:1
+error: expected `enum`
+  --> tests/02-not-enum.rs:32:5
    |
-31 | #[sorted]
-   | ^^^^^^^^^
-   |
-   = note: this error originates in the attribute macro `sorted` (in Nightly builds, run with -Z macro-backtrace for more info)
+32 | pub struct Error {
+   |     ^^^^^^
