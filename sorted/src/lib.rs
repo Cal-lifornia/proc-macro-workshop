@@ -120,11 +120,11 @@ impl syn::visit_mut::VisitMut for CheckFn {
             let pats: Vec<&syn::Pat> = i.arms.iter().map(|arm| &arm.pat).collect();
             match pat_to_arm_ident(&pats) {
                 Ok(idents) => {
-                    for (idx, current) in idents.iter().enumerate() {
-                        for next in idents.iter().skip(idx + 1) {
+                    for (idx, (current, _span)) in idents.iter().enumerate() {
+                        for (next, span) in idents.iter().skip(idx + 1) {
                             if current > next {
                                 self.err = Some(syn::Error::new(
-                                    next.span(),
+                                    *span,
                                     format!("{} should sort before {}", &next, &current),
                                 ));
                                 break;
@@ -139,30 +139,41 @@ impl syn::visit_mut::VisitMut for CheckFn {
     }
 }
 
-fn pat_to_arm_ident(pats: &[&syn::Pat]) -> syn::Result<Vec<syn::Ident>> {
-    let mut out: Vec<syn::Ident> = vec![];
+fn pat_to_arm_ident(pats: &[&syn::Pat]) -> syn::Result<Vec<(String, proc_macro2::Span)>> {
+    let mut out: Vec<(String, proc_macro2::Span)> = vec![];
 
     for pat in pats {
         use syn::Pat::*;
         match pat {
-            Ident(ref ident) => out.push(ident.ident.clone()),
+            Ident(ref ident) => out.push((ident.ident.to_string(), ident.span())),
             Or(pat_or) => {
                 let pats: Vec<&syn::Pat> =
                     pat_or.cases.pairs().map(|pair| pair.into_value()).collect();
                 out.append(&mut pat_to_arm_ident(&pats)?);
             }
-            Path(path) => {
-                out.push(path.path.segments.last().unwrap().ident.clone());
+            Path(ref path) => {
+                out.push((create_string_from_path(&path.path), path.span()));
             }
-            TupleStruct(tuple) => tuple.path,
-            _ => {
-                return Err(syn::Error::new(
-                    pat.span(),
-                    "match pattern type not suppported in [sorted]",
-                ))
+            TupleStruct(ref tuple) => {
+                out.push((create_string_from_path(&tuple.path), tuple.path.span()));
             }
+            Wild(ref wild) => {
+                out.push(("_".to_string(), wild.span()));
+            }
+            _ => return Err(syn::Error::new(pat.span(), "unsupported by #[sorted]")),
         }
     }
 
     Ok(out)
+}
+
+fn create_string_from_path(path: &syn::Path) -> String {
+    let mut out = String::new();
+    path.segments.pairs().for_each(|pair| {
+        if !out.is_empty() {
+            out.push_str("::");
+        }
+        out.push_str(&pair.value().ident.to_string());
+    });
+    out
 }
